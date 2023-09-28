@@ -1,0 +1,10 @@
+image : https://hub.docker.com/_/node
+execution : npm install && npm start
+port : 3000
+database : postgresql
+database name : app
+database user : app
+database password : 1234
+database port : 5432
+database host : db (dans docker)
+database backup : /init_db

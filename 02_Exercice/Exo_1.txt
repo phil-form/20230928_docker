@@ -1,0 +1,12 @@
+Create a postgres database container using docker compose with a database of name
+app, and a user name of app with the following password 1234.
+
+You'll need the following environment variables : 
+POSTGRES_PASSWORD=1234
+POSTGRES_USER=app
+POSTGRES_DB=app
+
+For data persistency you'll need to use volumes for the following directory :
+/var/lib/postgresql/data
+
+postgres default port is 5432
