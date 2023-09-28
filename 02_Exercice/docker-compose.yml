@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+      - ./backend/init_db:/init_db
+    env_file:
+      - ./.env
+    networks:
+      - db-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    networks:
+      - db-network
+    ports:
+      - 8080:80
+    volumes:
+      - admin-vol:/root/.pgadmin
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+
+  front:
+    extends:
+      file: ./front/docker-compose.yml
+      service: front
+
+  back:
+    extends:
+      file: ./backend/docker-compose.yml
+      service: back
+
+networks:
+  db-network:
+    driver: bridge
+
+volumes:
+  db-volume:
+  admin-vol:

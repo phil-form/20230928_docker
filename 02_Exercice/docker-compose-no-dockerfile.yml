@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16.0
+    environment:
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: app
+      POSTGRES_DB: app
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    ports:
+      - 5435:5432
+    networks:
+      - db-networks
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+
+    depends_on:
+      - db
+
+    networks:
+      - db-networks
+
+  back:
+    command: sh -c "npm install && npm start"
+    image: node:18
+    working_dir: /app
+    ports:
+      - 3000:3000
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+
+    networks:
+      - db-networks
+
+  front:
+    command: sh -c "npm install && npm start"
+    image: node:18
+    working_dir: /app
+    ports:
+      - 1980:1980
+    volumes:
+      - ./front:/app
+
+volumes:
+  db-volume:
+
+networks:
+  db-networks:
+    driver: bridge
