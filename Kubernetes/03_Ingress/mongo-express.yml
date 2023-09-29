@@ -1,0 +1,94 @@
+# you can have separated yaml file for services and deployment, but as deployments require a service we tend to group them in one file
+
+apiVersion: apps/v1
+kind: Deployment
+# this is the main part which is the blueprint for the pods.
+metadata:
+  name: mongo-express-deployment
+  labels:
+    app: mongo-express  # this is a unique identifier that is the same for each pods
+                 # every pod will have a unique name, but a unique label
+                 # so we can use the label to connect one pod to an other.
+                 # THIS IS THE DEPLOYMENT LABEL this is use by the SERVICE selector
+spec:
+  replicas: 1 # how many pods must be created with this blueprint
+              # if you want multiple database pods, you MUST use a stateFul instead of a deployment!
+  selector:
+    matchLabels:
+      app: mongo-express  # this means that all the pods that match this label
+                   # belong to this deployment
+                   # this is use by kubernetes to be able to know which pod belong to which deployment
+                   # the labels can have a custom key value so
+                   # mykey: myvalue is possible instead of app: mongo-expressdb but the std is app: key for the labels
+                   # This is link to the POD LABEL
+  template: # configuration of the pod so the template is the blueprint of the pod
+    metadata:
+      labels:
+        app: mongo-express # THIS IS THE POD LABEL
+    spec:
+      containers: #configure the container
+      - name: mongo-express
+        image: mongo-express
+        ports:
+        - containerPort: 8081 # port of the application
+        env:
+        - name: ME_CONFIG_MONGODB_ADMINUSERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user
+        - name: ME_CONFIG_MONGODB_ADMINPASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password
+        - name: ME_CONFIG_MONGODB_SERVER
+          valueFrom:
+            configMapKeyRef:
+              name: mongo-config
+              key: mongo-url
+
+--- # separate two part in a yml file
+
+# Using nodePort type
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: mongo-express-service
+# spec:
+#   # type: ClusterIp # default type => internal
+#   type: NodePort # create external service
+#   selector:
+#     app: mongo-express # THIS ONE IS LINK TO THE DEPLOYMENT LABEL
+#   ports:
+#     - protocol: TCP
+#       port: 8081 # internal port 
+#       targetPort: 8081 # target port of the pod
+#       nodePort: 30000 # must be between 30000 -> 32767
+#                       # this is the external port for that service
+
+# using loadBalancer type !! all types are load balanced
+# LoadBalancer type is to be use in production
+# the load balancer type will give both an internal and an external ip address
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-express-service
+spec:
+  # type: ClusterIp # default type => internal
+  type: LoadBalancer # create external service
+  selector:
+    app: mongo-express # THIS ONE IS LINK TO THE DEPLOYMENT LABEL
+  ports:
+    - protocol: TCP
+      port: 8081 # internal port 
+      targetPort: 8081 # target port of the pod
+      nodePort: 30000 # must be between 30000 -> 32767
+                      # this is the external port for that service
+
+# in the case of an external service you browser or application will contact 
+#   - the external service
+#   - the previous one will contact the pod
+# if it is linked to an other service
+#   - the previous pod will contact the internal service of the other
+#   - the service will contact the pod

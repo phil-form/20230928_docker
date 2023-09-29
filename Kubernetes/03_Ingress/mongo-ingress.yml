@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+spec:
+  rules:
+  - host: myapp.com
+    http: # -> means that the incoming request is forwarded to the internal service
+      paths:
+      - path: /
+        pathType: Exact  
+        backend:
+          service:
+            name: mongo-express-service
+            port: 
+              number: 8081 # port on that service 

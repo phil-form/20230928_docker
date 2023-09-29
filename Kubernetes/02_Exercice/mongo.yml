@@ -1,0 +1,60 @@
+# you can have separated yaml file for services and deployment, but as deployments require a service we tend to group them in one file
+# !! pay attention to identation !!
+apiVersion: apps/v1
+kind: Deployment
+# this is the main part which is the blueprint for the pods.
+metadata:
+  name: mongo-deployment
+  labels:
+    app: mongo   # this is a unique identifier that is the same for each pods
+                 # every pod will have a unique name, but a unique label
+                 # so we can use the label to connect one pod to an other.
+# specification
+# there is a status part but it will be created by kubernetes
+# so we don't need to configure it. The status part comes from the etcd.
+spec:
+  replicas: 1 # how many pods must be created with this blueprint
+              # if you want multiple database pods, you MUST use a stateFul instead of a deployment!
+  selector:
+    matchLabels:
+      app: mongo   # this means that all the pods that match this label
+                   # belong to this deployment
+                   # this is use by kubernetes to be able to know which pod belong to which deployment
+                   # the labels can have a custom key value so
+                   # mykey: myvalue is possible instead of app: mongodb but the std is app: key for the labels
+  template: #configuration of the pod
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers: #configure the container
+      - name: mongodb
+        image: mongo:5.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          # value:
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-user
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo-password
+
+--- # separate two part in a yml file
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
